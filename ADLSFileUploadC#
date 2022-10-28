@@ -1,0 +1,55 @@
+using Azure;
+using Azure.Storage.Files.DataLake;
+using Azure.Storage.Files.DataLake.Models;
+using Azure.Storage;
+using System.IO;
+using System;
+using Azure.Core;
+using Azure.Identity;
+using System.Threading.Tasks;
+using Microsoft.IdentityModel.Protocols;
+using System.Configuration;
+
+namespace ADLSFileUpload
+{
+    class Program
+    {
+        public static async Task UploadFile()
+        {
+            string clientID = "<ClientID>";
+            string tenantID = "<TenantID>";
+            string accountName = "<Storage Account Name>";
+            string clientSecret = "<Client Secret>";
+
+
+
+            TokenCredential credential = new ClientSecretCredential(tenantID, clientID, clientSecret, new TokenCredentialOptions());
+
+            string dfsUri = "https://" + accountName + ".dfs.core.windows.net/<Container Name>";
+
+
+            DataLakeFileSystemClient fileSystemClient = new DataLakeFileSystemClient(new Uri(dfsUri), credential);
+
+            DataLakeDirectoryClient directoryClient = fileSystemClient.GetDirectoryClient("<ADLS Directory Path>");
+
+//Provide the in what name the file needs to be uploaded
+            DataLakeFileClient fileClient = await directoryClient.CreateFileAsync("<Name of the File>");
+
+//Provide the local file path
+            FileStream fileStream = File.OpenRead("C:\\Users\\Documents\\02.xlsx");
+
+            long fileSize = fileStream.Length;
+
+            await fileClient.AppendAsync(fileStream, offset: 0);
+
+            await fileClient.FlushAsync(position: fileSize);
+
+}
+
+        public static void Main(string[] args)
+        {
+           UploadFile().Wait();
+           
+        }
+    }
+}
